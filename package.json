@@ -1,0 +1,25 @@
+{
+  "name": "Discord-bot-Guardian",
+  "private": true,
+  "main": "src/app.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.x"
+  },
+  "scripts": {
+    "start": "node src/app.js",
+    "register": "node src/commands.js",
+    "dev": "nodemon app.js"
+  },
+  "author": "Vlastimil Kleibl",
+  "license": "MIT",
+  "dependencies": {
+    "discord-interactions": "^4.0.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "eslint": "^10.8.1",
+    "nodemon": "^3.0.0"
+  }
+}
