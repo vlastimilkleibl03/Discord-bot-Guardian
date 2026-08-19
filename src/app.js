@@ -1,14 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import {
-  ButtonStyleTypes,
-  InteractionResponseFlags,
   InteractionResponseType,
   InteractionType,
-  MessageComponentTypes,
   verifyKeyMiddleware,
 } from 'discord-interactions';
-import { getRandomEmoji, DiscordRequest } from './utils.js';
+import { testReply } from './informative_replies/test.js';
+import { displayTicketModal, processTicketModal } from './ticket_system/open_ticket.js';
 
 // Create an express app
 const app = express();
@@ -21,49 +19,48 @@ const PORT = process.env.PORT || 3000;
  * Parse request body and verifies incoming requests using discord-interactions package
  */
 app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
-  // Interaction id, type and data
-  const { id, type, data } = req.body;
+    // Interaction id, type and data
+    const { id, type, data } = req.body;
 
-  /**
-   * Handle verification requests
-   */
-  if (type === InteractionType.PING) {
-    return res.send({ type: InteractionResponseType.PONG });
-  }
+    /**
+    * Handle verification requests
+    */
+    if (type === InteractionType.PING) {
+        return res.send({ type: InteractionResponseType.PONG });
+    }
 
-  /**
-   * Handle slash command requests
-   * See https://discord.com/developers/docs/interactions/application-commands#slash-commands
-   */
-  if (type === InteractionType.APPLICATION_COMMAND) {
-    const { name } = data;
+    /**
+    * Handle slash command requests
+    * See https://discord.com/developers/docs/interactions/application-commands#slash-commands
+    */
+    if (type === InteractionType.APPLICATION_COMMAND) {
+        const { name } = data;
 
-    // "test" command
-    if (name === 'test') {
-      // Send a message into the channel where command was triggered from
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-          components: [
-            {
-              type: MessageComponentTypes.TEXT_DISPLAY,
-              // Fetches a random emoji to send from a helper function
-              content: `hello world ${getRandomEmoji()}`
-            }
-          ]
-        },
-      });
-      }
+        switch (name) {
+            case 'test': return testReply(res);
+            case 'ticket': return displayTicketModal(res);
+        }
 
-    console.error(`unknown command: ${name}`);
-    return res.status(400).json({ error: 'unknown command' });
-  }
+        console.error(`unknown command: ${name}`);
+        return res.status(400).json({ error: 'unknown command' });
+    }
+    // Handle modal submits
+    else if (type === InteractionType.MODAL_SUBMIT) {
+        const { custom_id } = data;
+        const sender = req.body.member.user.username;
 
-  console.error('unknown interaction type', type);
-  return res.status(400).json({ error: 'unknown interaction type' });
+        switch (custom_id) {
+            case 'ticket_modal': return processTicketModal(res, sender, data.components);
+        }
+
+        console.error(`unknown modal id: ${custom_id}`);
+        return res.status(400).json({ error: 'unknown modal id' });
+    }
+
+    console.error('unknown interaction type', type);
+    return res.status(400).json({ error: 'unknown interaction type' });
 });
 
 app.listen(PORT, () => {
-  console.log('Listening on port', PORT);
+    console.log('Listening on port', PORT);
 });
