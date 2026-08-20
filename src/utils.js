@@ -36,6 +36,49 @@ export async function InstallGlobalCommands(appId, commands) {
   }
 }
 
+
+/**
+ * Sends a message to a given channel or throws an error when not successfull.
+ * @param {any} channelId Id of given channel.
+ * @param {any} message Message to send.
+ * @returns Id of sent message.
+ */
+export async function sendMessageToChannel(channelId, message) {
+    const endpoint = 'channels/' + channelId + '/messages';
+
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'POST', body: message });
+        const data = await response.json();
+        return data.id
+    } catch (err) {
+        console.error(err);
+        throw new Error('Failed to send a message to a channel with id: ' + channelId);
+    }
+}
+
+/**
+ * Sends a message to a given user through a DM.
+ * @param {any} userId Id of user.
+ * @param {any} message Message to send.
+ * @returns Id of sent message.
+ */
+export async function sendMessageToUser(userId, message) {
+    const endpoint = 'users/@me/channels';
+    let channel;
+
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'POST', body: { recipient_id: userId }});
+        channel = await response.json();
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to get channel id for dm with user: ' + userId);
+    }
+
+    return await sendMessageToChannel(channel.id, message);
+}
+
+
 // Simple method that returns a random emoji from list
 export function getRandomEmoji() {
   const emojiList = ['😭','😄','😌','🤓','😎','😤','🤖','😶‍🌫️','🌏','📸','💿','👋','🌊','✨'];

@@ -47,7 +47,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
     // Handle modal submits
     else if (type === InteractionType.MODAL_SUBMIT) {
         const { custom_id } = data;
-        const sender = req.body.member.user.username;
+        const sender = req.body.member.user;
 
         switch (custom_id) {
             case 'ticket_modal': return processTicketModal(res, sender, data.components);

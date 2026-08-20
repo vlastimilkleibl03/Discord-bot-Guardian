@@ -1,8 +1,8 @@
 import { MessageComponentTypes, InteractionResponseType, InteractionResponseFlags } from 'discord-interactions';
-import { DiscordRequest } from '#src/utils.js';
+import { sendMessageToChannel, sendMessageToUser } from '#src/utils.js';
 
 const TICKET_MODAL_ID = 'ticket_modal'
-const TICKET_CATEGORY_ID = 'ticket_modal';
+const TICKET_CATEGORY_ID = 'ticket_category';
 const TICKET_DESCRIPTION_ID = 'ticket_description';
 
 /**
@@ -65,13 +65,13 @@ export function displayTicketModal(res) {
  * Processes a data send through a ticket modal window. 
  * @param {any} res Object allowing to send a response for a http request.
  * @param {any} sender Discord user who sent the data.
- * @param {any} form_components Components of the ticket modal window.
+ * @param {any} formComponents Components of the ticket modal window.
  */
-export function processTicketModal(res, sender, form_components) {
+export async function processTicketModal(res, sender, formComponents) {
     let category;
     let description;
 
-    for (const component of form_components) {
+    for (const component of formComponents) {
         if (component.type === MessageComponentTypes.LABEL) {
             const child = component.component;
             if (child.custom_id === TICKET_CATEGORY_ID) {
@@ -83,42 +83,53 @@ export function processTicketModal(res, sender, form_components) {
         }
     }
 
-    // Data from ticket form are sent to preselect discord channel
-    const CHANNEL_ID = '1539660986082926653';
-    const endpoint = 'channels/' + CHANNEL_ID + '/messages';
-    const message = {
-        method: 'POST',
-        body: {
-            embeds: [
-                {
-                    title: 'New ticket',
-                    fields: [
-                        {
-                            name: 'Category',
-                            value: category,
-                            inline: true
-                        },
-                        {
-                            name: 'Description',
-                            value: description
-                        }
-                    ],
-                    footer: {
-                        text: 'Submitted by ' + (sender ?? 'Unknown user')
-                    },
-                    timestamp: new Date().toISOString()
-                }
-            ]
-        }
-    };
-    DiscordRequest(endpoint, message);
+    const message = buildTicketMessage(category, description, sender);
 
-    // User is notified about successfull operation
+    let result = 'Your ticket has been submitted.';
+    try {
+        // Data from ticket form are sent to preselect admin discord channel
+        const CHANNEL_ID = '1539660986082926653';
+        const adminMessageId = await sendMessageToChannel(CHANNEL_ID, message);
+
+        // Copy is also sent to user
+        const userMessageId = await sendMessageToUser(sender.id, message);
+    }
+    catch (err) {
+        console.error(err);
+        result = 'Something went wrong while sending a ticket.';
+    }
+
+    // User is notified about operation result
     return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-            content: 'Your ticket has been submitted.',
+            content: result,
             flags: InteractionResponseFlags.EPHEMERAL
         }
     });
+}
+
+function buildTicketMessage(category, description, sender) {
+    return {
+        embeds: [
+            {
+                title: 'New ticket',
+                fields: [
+                    {
+                        name: 'Category',
+                        value: category,
+                        inline: true
+                    },
+                    {
+                        name: 'Description',
+                        value: description
+                    }
+                ],
+                footer: {
+                    text: 'Submitted by ' + (sender.username ?? 'Unknown user')
+                },
+                timestamp: new Date().toISOString()
+            }
+        ]
+    }
 }
