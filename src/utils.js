@@ -57,25 +57,56 @@ export async function sendMessageToChannel(channelId, message) {
 }
 
 /**
- * Sends a message to a given user through a DM.
- * @param {any} userId Id of user.
+ * Sends a message that references another message in channel.
+ * @param {any} channelId Id of channel where message is send.
  * @param {any} message Message to send.
+ * @param {any} referenceId Id of message that is referenced, must be in same channel.
  * @returns Id of sent message.
  */
-export async function sendMessageToUser(userId, message) {
+export async function sendMessageWithReference(channelId, message, referenceId) {
+    message.message_reference = {
+        message_id: referenceId,
+        channel_id: channelId
+    }
+    const messageId = await sendMessageToChannel(channelId, message);
+    return messageId;
+}
+
+/**
+ * Sends a message to a given user through a DM.
+ * @param {any} userId Id of user.
+ * @returns Id of dm channel to user.
+ */
+export async function getUserMessageChannel(userId) {
     const endpoint = 'users/@me/channels';
     let channel;
 
     try {
         const response = await DiscordRequest(endpoint, { method: 'POST', body: { recipient_id: userId }});
         channel = await response.json();
+        return channel.id;
     }
     catch (err) {
         console.error(err);
         throw new Error('Failed to get channel id for dm with user: ' + userId);
     }
+}
 
-    return await sendMessageToChannel(channel.id, message);
+/**
+ * Modifies already posted message so it contains no interactive buttons.
+ * @param {any} messageId Id of modified message.
+ * @param {any} channelId Id of channel where message was send.
+ */
+export async function removeButtonsFromMessage(messageId, channelId) {
+    const endpoint = 'channels/' + channelId + '/messages/' + messageId;
+
+    try {
+        await DiscordRequest(endpoint, { method: 'PATCH', body: { components: [] } });
+    }
+    catch (err) {
+        console.log(err);
+        throw new Error('Failed to remove buttons from message: ' + messageId + ' in channel: ' + channelId);
+    }
 }
 
 

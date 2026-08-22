@@ -1,5 +1,6 @@
-import { MessageComponentTypes, InteractionResponseType, InteractionResponseFlags } from 'discord-interactions';
-import { sendMessageToChannel, sendMessageToUser } from '#src/utils.js';
+import { MessageComponentTypes, InteractionResponseType, InteractionResponseFlags, ButtonStyleTypes } from 'discord-interactions';
+import { sendMessageToChannel, getUserMessageChannel } from '#src/utils.js';
+import { saveTicketData, getGuildTicketChannel } from './database.js';
 
 const TICKET_MODAL_ID = 'ticket_modal'
 const TICKET_CATEGORY_ID = 'ticket_category';
@@ -11,7 +12,7 @@ const TICKET_DESCRIPTION_ID = 'ticket_description';
  */
 export function displayTicketModal(res) {
     return res.send({
-        type: 9,
+        type: InteractionResponseType.MODAL,
         data: {
             custom_id: TICKET_MODAL_ID,
             title: 'Open a new ticket',
@@ -62,12 +63,13 @@ export function displayTicketModal(res) {
 
 
 /**
- * Processes a data send through a ticket modal window. 
+ * Processes a data sent through a ticket modal window. 
  * @param {any} res Object allowing to send a response for a http request.
  * @param {any} sender Discord user who sent the data.
+ * @param {any} guild Discord server where ticket is opened.
  * @param {any} formComponents Components of the ticket modal window.
  */
-export async function processTicketModal(res, sender, formComponents) {
+export async function processTicketModal(res, sender, guild, formComponents) {
     let category;
     let description;
 
@@ -83,16 +85,21 @@ export async function processTicketModal(res, sender, formComponents) {
         }
     }
 
-    const message = buildTicketMessage(category, description, sender);
+    const adminMessage = buildAdminTicketMessage(category, description, sender);
+    const userMessage = buildUserTicketMessage(category, description, guild);
 
     let result = 'Your ticket has been submitted.';
     try {
         // Data from ticket form are sent to preselect admin discord channel
-        const CHANNEL_ID = '1539660986082926653';
-        const adminMessageId = await sendMessageToChannel(CHANNEL_ID, message);
+        const channelId = getGuildTicketChannel(guild.id);
+        const adminMessageId = await sendMessageToChannel(channelId, adminMessage);
 
         // Copy is also sent to user
-        const userMessageId = await sendMessageToUser(sender.id, message);
+        const userMessageChannel = await getUserMessageChannel(sender.id)
+        const userMessageId = await sendMessageToChannel(userMessageChannel, userMessage);
+
+        // Save ticket details to database
+        saveTicketData('ID', sender.id, guild.id, adminMessageId, userMessageId);
     }
     catch (err) {
         console.error(err);
@@ -109,7 +116,7 @@ export async function processTicketModal(res, sender, formComponents) {
     });
 }
 
-function buildTicketMessage(category, description, sender) {
+function buildAdminTicketMessage(category, description, sender) {
     return {
         embeds: [
             {
@@ -129,6 +136,63 @@ function buildTicketMessage(category, description, sender) {
                     text: 'Submitted by ' + (sender.username ?? 'Unknown user')
                 },
                 timestamp: new Date().toISOString()
+            }
+        ],
+        components: [
+            {
+                type: MessageComponentTypes.ACTION_ROW,
+                components: [
+                    {
+                        type: MessageComponentTypes.BUTTON,
+                        custom_id: 'ticket_reply_admin',
+                        label: 'Reply',
+                        style: ButtonStyleTypes.PRIMARY
+                    },
+                    {
+                        type: MessageComponentTypes.BUTTON,
+                        custom_id: 'ticket_close_admin',
+                        label: 'Close',
+                        style: ButtonStyleTypes.DANGER
+                    }
+                ]
+            }
+        ]
+    }
+}
+
+function buildUserTicketMessage(category, description, guild) {
+    return {
+        embeds: [
+            {
+                title: 'Copy of your ticket',
+                fields: [
+                    {
+                        name: 'Category',
+                        value: category,
+                        inline: true
+                    },
+                    {
+                        name: 'Description',
+                        value: description
+                    }
+                ],
+                footer: {
+                    text: 'Submitted in ' + (guild.name ?? 'Unknown server')
+                },
+                timestamp: new Date().toISOString()
+            }
+        ],
+        components: [
+            {
+                type: MessageComponentTypes.ACTION_ROW,
+                components: [
+                    {
+                        type: MessageComponentTypes.BUTTON,
+                        custom_id: 'ticket_close_user',
+                        label: 'Close',
+                        style: ButtonStyleTypes.DANGER
+                    }
+                ]
             }
         ]
     }
