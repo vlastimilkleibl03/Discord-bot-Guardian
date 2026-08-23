@@ -1,6 +1,9 @@
-import { MessageComponentTypes, InteractionResponseType, InteractionResponseFlags, ButtonStyleTypes } from 'discord-interactions';
+import {
+    MessageComponentTypes, InteractionResponseType,
+    InteractionResponseFlags, ButtonStyleTypes
+} from 'discord-interactions';
 import { sendMessageToChannel, getUserMessageChannel } from '#src/utils.js';
-import { saveTicketData, getGuildTicketChannel } from './database.js';
+import { saveTicketData, getGuildTicketChannel } from './ticket_repository.js';
 
 const TICKET_MODAL_ID = 'ticket_modal'
 const TICKET_CATEGORY_ID = 'ticket_category';
@@ -99,7 +102,7 @@ export async function processTicketModal(res, sender, guild, formComponents) {
         const userMessageId = await sendMessageToChannel(userMessageChannel, userMessage);
 
         // Save ticket details to database
-        saveTicketData('ID', sender.id, guild.id, adminMessageId, userMessageId);
+        await saveTicketData(sender.id, guild.id, adminMessageId, userMessageId);
     }
     catch (err) {
         console.error(err);

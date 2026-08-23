@@ -1,6 +1,6 @@
 import { InteractionResponseType, InteractionResponseFlags } from 'discord-interactions'
 import { getUserMessageChannel, sendMessageWithReference, removeButtonsFromMessage } from '#src/utils.js';
-import { getTicketByUser, getTicketByGuild, getGuildTicketChannel } from './database.js';
+import { getTicketByUser, getTicketByGuild, getGuildTicketChannel, deleteTicket } from './ticket_repository.js';
 
 
 /**
@@ -11,16 +11,25 @@ import { getTicketByUser, getTicketByGuild, getGuildTicketChannel } from './data
  * @param {any} userInitiated Determines whether interaction was triggered by user or admin.
  */
 export async function closeTicket(res, messageId, relationId, userInitiated) {
-    const ticket = userInitiated ? getTicketByUser(relationId, messageId) : getTicketByGuild(relationId, messageId);
-    const userMessageChannel = await getUserMessageChannel(ticket.user);
-    const adminChannel = getGuildTicketChannel(ticket.guild);
-
-    // TODO delete from database
-
     try {
+        // Find ticket in database
+        const ticket = userInitiated
+            ? await getTicketByUser(relationId, messageId)
+            : await getTicketByGuild(relationId, messageId);
+        if (!ticket) {
+            throw new Error('Ticket is not in database.');
+        }
+
+        // Get coresponding channels
+        const userMessageChannel = await getUserMessageChannel(ticket.userId);
+        const adminChannel = getGuildTicketChannel(ticket.guildId);
+
+        // Delete ticket from database
+        await deleteTicket(ticket.id);
+
         // Remove buttons
-        await removeButtonsFromMessage(ticket.adminMessage, adminChannel);
-        await removeButtonsFromMessage(ticket.userMessage, userMessageChannel);
+        await removeButtonsFromMessage(ticket.adminMessageId, adminChannel);
+        await removeButtonsFromMessage(ticket.userMessageId, userMessageChannel);
 
         // Send ticket closed message
         const message = {
@@ -31,9 +40,9 @@ export async function closeTicket(res, messageId, relationId, userInitiated) {
             ]
         }
         // To admin channel
-        await sendMessageWithReference(adminChannel, message, ticket.adminMessage);
+        await sendMessageWithReference(adminChannel, message, ticket.adminMessageId);
         // To user
-        await sendMessageWithReference(userMessageChannel, message, ticket.userMessage);
+        await sendMessageWithReference(userMessageChannel, message, ticket.userMessageId);
     }
     catch (err) {
         console.error(err);

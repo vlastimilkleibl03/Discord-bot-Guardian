@@ -38,6 +38,26 @@ export async function InstallGlobalCommands(appId, commands) {
 
 
 /**
+ * Fetches and return a message that was sent in given channel.
+ * @param {any} messageId Id of message.
+ * @param {any} channelId Id of channel, where message is posted.
+ * @returns Body of fetched message.
+ */
+export async function fetchMessage(messageId, channelId) {
+    const endpoint = 'channels/' + channelId + '/messages/' + messageId;
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'GET' });
+        const message = await response.json();
+        return message;
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to fetch a message: ' + messageId + ' from channel with id: ' + channelId);
+    }
+}
+
+
+/**
  * Sends a message to a given channel or throws an error when not successfull.
  * @param {any} channelId Id of given channel.
  * @param {any} message Message to send.
@@ -89,6 +109,24 @@ export async function getUserMessageChannel(userId) {
     catch (err) {
         console.error(err);
         throw new Error('Failed to get channel id for dm with user: ' + userId);
+    }
+}
+
+
+/**
+ * Replaces the whole message body with a new given.
+ * @param {any} messageId Id of message that should be modified.
+ * @param {any} channelId Id of channel where message is posted.
+ * @param {any} newMessageContent New message body.
+ */
+export async function editMessage(messageId, channelId, newMessageContent) {
+    const endpoint = 'channels/' + channelId + '/messages/' + messageId;
+
+    try {
+        return DiscordRequest(endpoint, { method: 'PATCH', body: newMessageContent });
+    } catch (err) {
+        console.error(err);
+        throw new Error('Failed to send a message to a channel with id: ' + channelId);
     }
 }
 

@@ -1,6 +1,18 @@
-import { MessageComponentTypes, InteractionResponseType, InteractionResponseFlags, ButtonStyleTypes } from 'discord-interactions';
-import { sendMessageWithReference, removeButtonsFromMessage, getUserMessageChannel } from '#src/utils.js'
-import { getTicketByGuild, getTicketByUser, getGuildTicketChannel } from './database.js'
+import {
+    MessageComponentTypes, InteractionResponseType,
+    InteractionResponseFlags, ButtonStyleTypes
+} from 'discord-interactions';
+import {
+    sendMessageWithReference,
+    removeButtonsFromMessage,
+    getUserMessageChannel,
+    fetchMessage,
+    editMessage
+} from '#src/utils.js'
+import {
+    getTicketByGuild, getTicketByUser,
+    getGuildTicketChannel, updateTicketMessages
+} from './ticket_repository.js'
 
 
 const REPLY_TEXT_ID = 'reply_text'
@@ -42,17 +54,19 @@ export function displayReplyModal(res, role, message) {
  * @param {any} guild Discord server where reply was sent.
  */
 export async function processReplyAdmin(res, replyFormComponents, referenceId, guild) {
-    const ticket = getTicketByGuild(guild.id, referenceId);
-    const adminChannel = getGuildTicketChannel(ticket.guild);
-    const userChannel = await getUserMessageChannel(ticket.user)
-
-    const interactive = { channel: userChannel, reference: ticket.userMessage };
-    const update = { channel: adminChannel, reference: ticket.adminMessage }
-
     try {
-        const updateId = await processReply(replyFormComponents, interactive, update, 'user', 'admin');
+        // Find ticket in database and get channels
+        const ticket = await getTicketByGuild(guild.id, referenceId);
+        const adminChannel = getGuildTicketChannel(ticket.guildId);
+        const userChannel = await getUserMessageChannel(ticket.userId)
 
-        // TODO update database
+        // Set which message will be edited and where a new one will be sent
+        const interactive = { channel: userChannel, reference: ticket.userMessageId };
+        const update = { channel: adminChannel, reference: ticket.adminMessageId }
+
+        // Process the reply by editing/sendind messages and update database
+        const updateId = await processReply(replyFormComponents, interactive, update, 'user', 'admin');
+        await updateTicketMessages(ticket.id, ticket.adminMessageId, updateId);
 
     }
     catch (err) {
@@ -79,17 +93,19 @@ export async function processReplyAdmin(res, replyFormComponents, referenceId, g
  * @param {any} user User who replied to a ticket.
  */
 export async function processReplyUser(res, replyFormComponents, referenceId, user) {
-    const ticket = getTicketByUser(user.id, referenceId);
-    const adminChannel = getGuildTicketChannel(ticket.guild);
-    const userChannel = await getUserMessageChannel(ticket.user)
-
-    const interactive = { channel: adminChannel, reference: ticket.adminMessage };
-    const update = { channel: userChannel, reference: ticket.userMessage }
-
     try {
-        const updateId = await processReply(replyFormComponents, interactive, update, 'admin', 'user');
+        // Find ticket in database and get channels
+        const ticket = await getTicketByUser(user.id, referenceId);
+        const adminChannel = getGuildTicketChannel(ticket.guildId);
+        const userChannel = await getUserMessageChannel(ticket.userId)
 
-        // TODO update database
+        // Set which message will be edited and where a new one will be sent
+        const interactive = { channel: adminChannel, reference: ticket.adminMessageId };
+        const update = { channel: userChannel, reference: ticket.userMessageId }
+
+        // Process the reply by editing/sendind messages and update database
+        const updateId = await processReply(replyFormComponents, interactive, update, 'admin', 'user');
+        await updateTicketMessages(ticket.id, updateId, ticket.userMessageId);
 
     }
     catch (err) {
@@ -126,7 +142,7 @@ async function processReply(replyFormComponents, interactive, update, interactiv
         await removeButtonsFromMessage(interactive.reference, interactive.channel);
         await removeButtonsFromMessage(update.reference, update.channel);
 
-        // Send a new message with reply option to other side and edit the sender one
+        // Send a new message with reply option to other side and edit the sender´s one
         const newMessageId = await sendInteractiveReply(interactive.channel, replyMessageText, interactive.reference, interactiveRole);
         await updateReferenced(update.channel, replyMessageText, update.reference, updateRole);
         return newMessageId
@@ -175,5 +191,33 @@ async function sendInteractiveReply(channelId, messageText, referenceId, role) {
 }
 
 async function updateReferenced(channelId, messageText, referenceId, role) {
+    const previousMessage = await fetchMessage(referenceId, channelId);
+    const embed = previousMessage.embeds[0];
 
+    // Add reply as a new field
+    embed.fields = [
+        ...(embed.fields ?? []),
+        {
+            name: "Reply:",
+            value: messageText,
+            inline: false
+        }
+    ];
+
+    // Add button for closing ticket
+    previousMessage.components = [
+        {
+            type: MessageComponentTypes.ACTION_ROW,
+            components: [
+                {
+                    type: MessageComponentTypes.BUTTON,
+                    style: ButtonStyleTypes.DANGER,
+                    label: "Close",
+                    custom_id: "ticket_close_" + role,
+                }
+            ]
+        }
+    ];
+
+    return editMessage(referenceId, channelId, previousMessage);
 }
