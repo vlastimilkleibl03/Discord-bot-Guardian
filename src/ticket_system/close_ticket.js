@@ -1,5 +1,6 @@
-import { InteractionResponseType, InteractionResponseFlags } from 'discord-interactions'
+import { InteractionResponseType } from 'discord-interactions'
 import { getUserMessageChannel, sendMessageWithReference, removeButtonsFromMessage } from '#src/utils.js';
+import { errorInformation } from '#src/informative_replies/user_notification.js';
 import { getTicketByUser, getTicketByGuild, getGuildTicketChannel, deleteTicket } from './ticket_repository.js';
 
 
@@ -22,7 +23,7 @@ export async function closeTicket(res, messageId, relationId, userInitiated) {
 
         // Get coresponding channels
         const userMessageChannel = await getUserMessageChannel(ticket.userId);
-        const adminChannel = getGuildTicketChannel(ticket.guildId);
+        const adminChannel = await getGuildTicketChannel(ticket.guildId, ticket.category);
 
         // Delete ticket from database
         await deleteTicket(ticket.id);
@@ -45,16 +46,7 @@ export async function closeTicket(res, messageId, relationId, userInitiated) {
         await sendMessageWithReference(userMessageChannel, message, ticket.userMessageId);
     }
     catch (err) {
-        console.error(err);
-
-        // User is informed about the error
-        return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-                content: 'Ticket closing failed.',
-                flags: InteractionResponseFlags.EPHEMERAL
-            }
-        });
+        return errorInformation(res, err, 'Ticket closing failed.');
     }
 
     return res.send({

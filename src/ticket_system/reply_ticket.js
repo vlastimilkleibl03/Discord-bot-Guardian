@@ -1,6 +1,6 @@
 import {
     MessageComponentTypes, InteractionResponseType,
-    InteractionResponseFlags, ButtonStyleTypes
+    ButtonStyleTypes
 } from 'discord-interactions';
 import {
     sendMessageWithReference,
@@ -9,6 +9,7 @@ import {
     fetchMessage,
     editMessage
 } from '#src/utils.js'
+import { errorInformation } from '#src/informative_replies/user_notification.js';
 import {
     getTicketByGuild, getTicketByUser,
     getGuildTicketChannel, updateTicketMessages
@@ -57,7 +58,11 @@ export async function processReplyAdmin(res, replyFormComponents, referenceId, g
     try {
         // Find ticket in database and get channels
         const ticket = await getTicketByGuild(guild.id, referenceId);
-        const adminChannel = getGuildTicketChannel(ticket.guildId);
+        if (!ticket) {
+            throw new Error('Ticket not found in database.')
+        }
+
+        const adminChannel = await getGuildTicketChannel(ticket.guildId, ticket.category);
         const userChannel = await getUserMessageChannel(ticket.userId)
 
         // Set which message will be edited and where a new one will be sent
@@ -70,14 +75,7 @@ export async function processReplyAdmin(res, replyFormComponents, referenceId, g
 
     }
     catch (err) {
-        console.log(err);
-        return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-                content: 'Something went wrong while replying to ticket.',
-                flags: InteractionResponseFlags.EPHEMERAL
-            }
-        })
+        return errorInformation(res, err, 'Something went wrong while replying to ticket.');
     }
 
     return res.send({
@@ -96,7 +94,11 @@ export async function processReplyUser(res, replyFormComponents, referenceId, us
     try {
         // Find ticket in database and get channels
         const ticket = await getTicketByUser(user.id, referenceId);
-        const adminChannel = getGuildTicketChannel(ticket.guildId);
+        if (!ticket) {
+            throw new Error('Ticket not found in database.')
+        }
+
+        const adminChannel = await getGuildTicketChannel(ticket.guildId, ticket.category);
         const userChannel = await getUserMessageChannel(ticket.userId)
 
         // Set which message will be edited and where a new one will be sent
@@ -109,14 +111,7 @@ export async function processReplyUser(res, replyFormComponents, referenceId, us
 
     }
     catch (err) {
-        console.log(err);
-        return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-                content: 'Something went wrong while replying to ticket.',
-                flags: InteractionResponseFlags.EPHEMERAL
-            }
-        })
+        return errorInformation(res, err, 'Something went wrong while replying to ticket.');
     }
 
     return res.send({
@@ -143,12 +138,16 @@ async function processReply(replyFormComponents, interactive, update, interactiv
         await removeButtonsFromMessage(update.reference, update.channel);
 
         // Send a new message with reply option to other side and edit the sender´s one
-        const newMessageId = await sendInteractiveReply(interactive.channel, replyMessageText, interactive.reference, interactiveRole);
+        const newMessageId = await sendInteractiveReply(
+            interactive.channel,
+            replyMessageText,
+            interactive.reference,
+            interactiveRole);
         await updateReferenced(update.channel, replyMessageText, update.reference, updateRole);
         return newMessageId
     }
     catch (err) {
-        console.log(err);
+        console.error(err);
         throw new Error('Failed to update old messages or send a new reply');
     }
 }

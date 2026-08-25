@@ -5,10 +5,12 @@ import {
   InteractionType,
   verifyKeyMiddleware,
 } from 'discord-interactions';
+import { getOption } from './utils.js';
 import { testReply } from './informative_replies/test.js';
 import { displayTicketModal, processTicketModal } from './ticket_system/open_ticket.js';
 import { displayReplyModal, processReplyAdmin, processReplyUser } from './ticket_system/reply_ticket.js';
 import { closeTicket } from './ticket_system/close_ticket.js';
+import { addTicketCategory, deleteTicketCategory } from './ticket_system/ticket_category.js';
 
 // Create an express app
 const app = express();
@@ -40,7 +42,20 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
 
         switch (name) {
             case 'test': return testReply(res);
-            case 'ticket': return displayTicketModal(res);
+            case 'ticket': return displayTicketModal(res, req.body.guild);
+            case 'add_category': return addTicketCategory(
+                res,
+                req.body.member.user,
+                req.body.guild.id,
+                getOption(data, 'category_name'),
+                getOption(data, 'category_channel')
+            );
+            case 'delete_category': return deleteTicketCategory(
+                res,
+                req.body.member.user,
+                req.body.guild.id,
+                getOption(data, 'category_name')
+            );
         }
 
         console.error(`unknown command: ${name}`);

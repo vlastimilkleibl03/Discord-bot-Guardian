@@ -1,9 +1,14 @@
 import {
     MessageComponentTypes, InteractionResponseType,
-    InteractionResponseFlags, ButtonStyleTypes
+    ButtonStyleTypes
 } from 'discord-interactions';
 import { sendMessageToChannel, getUserMessageChannel } from '#src/utils.js';
+import { errorInformation, replyInformation } from '#src/informative_replies/user_notification.js';
 import { saveTicketData, getGuildTicketChannel } from './ticket_repository.js';
+import {
+    categoryFormatName, getGuildTicketCategories,
+    prepareCategorySelection
+} from './ticket_category.js';
 
 const TICKET_MODAL_ID = 'ticket_modal'
 const TICKET_CATEGORY_ID = 'ticket_category';
@@ -12,8 +17,19 @@ const TICKET_DESCRIPTION_ID = 'ticket_description';
 /**
  * Creates and displays a modal window for new ticket creation invoked by command.
  * @param {any} res Object allowing to send a response for a http request.
+ * @param {any} guild Server where command is invoked, used for getting ticket categories.
  */
-export function displayTicketModal(res) {
+export async function displayTicketModal(res, guild) {
+    // Load ticket categories in guild
+    let categories;
+    try {
+        categories = await getGuildTicketCategories(guild.id)
+    }
+    catch (err) {
+        return errorInformation(res, err, 'Something went wrong.');
+    }
+
+    // Create a modal form
     return res.send({
         type: InteractionResponseType.MODAL,
         data: {
@@ -32,20 +48,7 @@ export function displayTicketModal(res) {
                     component: {
                         type: MessageComponentTypes.STRING_SELECT,
                         custom_id: TICKET_CATEGORY_ID,
-                        options: [
-                            {
-                                label: 'Moderation appeals',
-                                value: 'moderation_appeals'
-                            },
-                            {
-                                label: 'Server features',
-                                value: 'server_features'
-                            },
-                            {
-                                label: 'Other',
-                                value: 'other'
-                            }
-                        ]
+                        options: [...prepareCategorySelection(categories)]
                     }
                 },
                 {
@@ -88,13 +91,19 @@ export async function processTicketModal(res, sender, guild, formComponents) {
         }
     }
 
-    const adminMessage = buildAdminTicketMessage(category, description, sender);
-    const userMessage = buildUserTicketMessage(category, description, guild);
+    const categoryDisplay = categoryFormatName(category);
+    const adminMessage = buildAdminTicketMessage(categoryDisplay, description, sender);
+    const userMessage = buildUserTicketMessage(categoryDisplay, description, guild);
 
-    let result = 'Your ticket has been submitted.';
     try {
+        // Check if ticket category is available for current guild
+        const guildCategories = await getGuildTicketCategories(guild.id);
+        if (!guildCategories.includes(category)) {
+            throw new Error('Ticket category is not in database.')
+        }
+
         // Data from ticket form are sent to preselect admin discord channel
-        const channelId = getGuildTicketChannel(guild.id);
+        const channelId = await getGuildTicketChannel(guild.id, category);
         const adminMessageId = await sendMessageToChannel(channelId, adminMessage);
 
         // Copy is also sent to user
@@ -102,21 +111,14 @@ export async function processTicketModal(res, sender, guild, formComponents) {
         const userMessageId = await sendMessageToChannel(userMessageChannel, userMessage);
 
         // Save ticket details to database
-        await saveTicketData(sender.id, guild.id, adminMessageId, userMessageId);
+        await saveTicketData(sender.id, guild.id, adminMessageId, userMessageId, category);
     }
     catch (err) {
-        console.error(err);
-        result = 'Something went wrong while sending a ticket.';
+        return errorInformation(res, err, 'Something went wrong while sending a ticket.');
     }
 
     // User is notified about operation result
-    return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-            content: result,
-            flags: InteractionResponseFlags.EPHEMERAL
-        }
-    });
+    return replyInformation(res, 'Your ticket has been submitted.', true);
 }
 
 function buildAdminTicketMessage(category, description, sender) {

@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { capitalize, InstallGlobalCommands } from './utils.js';
+import { ChannelTypes } from 'discord-interactions';
+import { InstallGlobalCommands } from './utils.js';
 
 
 // Simple test command
@@ -19,6 +20,45 @@ const TICKET_COMMAND = {
     contexts: [0],
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, TICKET_COMMAND];
+const ADD_CATEGORY_COMMAND = {
+    name: 'add_category',
+    description: 'Add a new ticket category or modify existing, use snake_case',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'category_name',
+            description: 'Name of a category',
+            type: 3,
+            required: true,
+        },
+        {
+            name: 'category_channel',
+            description: 'Admin channel for tickets',
+            type: 7,
+            channel_types: [ChannelTypes.GUILD_TEXT],
+            required: true
+        }
+    ]
+};
+
+const DELETE_CATEGORY_COMMAND = {
+    name: 'delete_category',
+    description: 'Delete a ticket category',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'category_name',
+            description: 'Name of category to delete',
+            type: 3,
+            required: true,
+        }
+    ]
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, TICKET_COMMAND, ADD_CATEGORY_COMMAND, DELETE_CATEGORY_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

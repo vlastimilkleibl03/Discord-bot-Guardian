@@ -16,4 +16,12 @@ model Ticket {
   guildId			String
   adminMessageId    String
   userMessageId		String
+  category			String
+}
+
+model TicketCategory {
+  guildId			String
+  categoryName		String
+  categoryChannel	String
+  @@unique([guildId, categoryName])
 }
