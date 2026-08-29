@@ -6,7 +6,7 @@ import { InstallGlobalCommands } from './utils.js';
 // Simple test command
 const TEST_COMMAND = {
   name: 'test',
-  description: 'Basic command',
+  description: 'Basic command.',
   type: 1,
   integration_types: [0, 1],
   contexts: [0, 1, 2],
@@ -14,28 +14,28 @@ const TEST_COMMAND = {
 
 const TICKET_COMMAND = {
     name: 'ticket',
-    description: 'Open a new ticket',
+    description: 'Open a new ticket.',
     type: 1,
     integration_types: [0],
     contexts: [0],
 };
 
-const ADD_CATEGORY_COMMAND = {
-    name: 'add_category',
-    description: 'Add a new ticket category or modify existing, use snake_case',
+const MODIFY_CATEGORY_COMMAND = {
+    name: 'modify_category',
+    description: 'Add a new ticket category or modify existing.',
     type: 1,
     integration_types: [0],
     contexts: [0],
     options: [
         {
             name: 'category_name',
-            description: 'Name of a category',
+            description: 'Name of a category, use snake_case.',
             type: 3,
             required: true,
         },
         {
             name: 'category_channel',
-            description: 'Admin channel for tickets',
+            description: 'Admin channel for tickets.',
             type: 7,
             channel_types: [ChannelTypes.GUILD_TEXT],
             required: true
@@ -45,20 +45,20 @@ const ADD_CATEGORY_COMMAND = {
 
 const DELETE_CATEGORY_COMMAND = {
     name: 'delete_category',
-    description: 'Delete a ticket category',
+    description: 'Delete a ticket category.',
     type: 1,
     integration_types: [0],
     contexts: [0],
     options: [
         {
             name: 'category_name',
-            description: 'Name of category to delete',
+            description: 'Name of category to delete, use snake_case.',
             type: 3,
             required: true,
         }
     ]
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, TICKET_COMMAND, ADD_CATEGORY_COMMAND, DELETE_CATEGORY_COMMAND];
+const ALL_COMMANDS = [TEST_COMMAND, TICKET_COMMAND, MODIFY_CATEGORY_COMMAND, DELETE_CATEGORY_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

@@ -1,5 +1,6 @@
-import { capitalize } from '#src/utils.js';
-import { replyInformation, errorInformation } from '#src/informative_replies/user_notification.js';
+import { ChannelTypes } from 'discord-interactions';
+import { capitalize, fetchGuildChannels } from '#src/utils.js';
+import { replyInformation, errorInformation, permissionReply } from '#src/informative_replies/user_notification.js';
 import { loadGuildTicketCategories, saveCategoryData, deleteCategory } from './ticket_repository.js';
 
 
@@ -13,7 +14,11 @@ export const DEFAULT_CATEGORIES = ['moderation_appeals', 'server_features', 'oth
  * @param {any} categoryName Name of a ticket category.
  * @param {any} channelId Id of admin channel where tickets of given category will be sent.
  */
-export async function addTicketCategory(res, sender, guildId, categoryName, channelId) {
+export async function modifyTicketCategory(res, sender, guildId, categoryName, channelId) {
+    if (!hasModifyPermission(sender)) {
+        return permissionReply(res)
+    }
+
     try {
         await saveCategoryData(guildId, categoryName, channelId);
     }
@@ -32,6 +37,10 @@ export async function addTicketCategory(res, sender, guildId, categoryName, chan
  * @param {any} categoryName Name of a ticket category.
  */
 export async function deleteTicketCategory(res, sender, guildId, categoryName) {
+    if (!hasModifyPermission(sender)) {
+        return permissionReply(res)
+    }
+
     try {
         await deleteCategory(guildId, categoryName);
     }
@@ -40,6 +49,13 @@ export async function deleteTicketCategory(res, sender, guildId, categoryName) {
     }
 
     return replyInformation(res, 'Successfully removed category: ' + categoryName);
+}
+
+function hasModifyPermission(guildMember) {
+    const permissions = BigInt(guildMember.permissions);
+    const ADMINISTRATOR = 1n << 3n;
+
+    return (permissions & ADMINISTRATOR) !== 0n;
 }
 
 
@@ -73,4 +89,32 @@ export function categoryFormatName(str) {
         .split('_')
         .map(capitalize)
         .join(' ');
+}
+
+
+/**
+ * Creates a new default ticket categories after joing a new server.
+ * @param {any} guildId Id of joined guild.
+ */
+export async function createDefaultTicketCategories(guildId) {
+    try {
+        // Get text channels in guild and select one random to where send tickets
+        const guildChannels = await fetchGuildChannels(guildId);
+        const textChannels = guildChannels.filter(channel => channel.type === ChannelTypes.GUILD_TEXT)
+        const defaultChannel = textChannels[0];
+
+        // Get previously created categories, so no modification is made on existing (in case bot was on server before)
+        const activeCategories = await getGuildTicketCategories(guildId);
+
+        // Add all non present default categories
+        for (const category of DEFAULT_CATEGORIES) {
+            if (!activeCategories.includes(category)) {
+                console.log(category + 'add');
+                await saveCategoryData(guildId, category, defaultChannel.id);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Failed to set default ticket categories, caused by: ' + err);
+    }
 }

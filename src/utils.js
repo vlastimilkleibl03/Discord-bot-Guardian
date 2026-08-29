@@ -99,11 +99,10 @@ export async function sendMessageWithReference(channelId, message, referenceId) 
  */
 export async function getUserMessageChannel(userId) {
     const endpoint = 'users/@me/channels';
-    let channel;
 
     try {
         const response = await DiscordRequest(endpoint, { method: 'POST', body: { recipient_id: userId }});
-        channel = await response.json();
+        const channel = await response.json();
         return channel.id;
     }
     catch (err) {
@@ -144,6 +143,26 @@ export async function removeButtonsFromMessage(messageId, channelId) {
     catch (err) {
         console.log(err);
         throw new Error('Failed to remove buttons from message: ' + messageId + ' in channel: ' + channelId);
+    }
+}
+
+
+/**
+ * Fetches all available channels in guild.
+ * @param {any} guildId Id of guild.
+ * @returns Array of available channels.
+ */
+export async function fetchGuildChannels(guildId) {
+    const endpoint = '/guilds/' + guildId + '/channels';
+
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'GET' });
+        const channels = await response.json()
+        return channels;
+    }
+    catch (err) {
+        console.log(err);
+        throw new Error('Failed to get channels for guild with id: ' + guildId);
     }
 }
 
