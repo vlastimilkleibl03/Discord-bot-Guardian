@@ -93,6 +93,25 @@ export async function sendMessageWithReference(channelId, message, referenceId) 
 }
 
 /**
+ * Fetches a public information about given user.
+ * @param {any} userId Id of given user.
+ * @returns Object with user details.
+ */
+export async function fetchUser(userId) {
+    const endpoint = 'users/' + userId;
+
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'GET' });
+        const user = await response.json();
+        return user;
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to get details about user: ' + userId);
+    }
+}
+
+/**
  * Sends a message to a given user through a DM.
  * @param {any} userId Id of user.
  * @returns Id of dm channel to user.
@@ -141,11 +160,30 @@ export async function removeButtonsFromMessage(messageId, channelId) {
         await DiscordRequest(endpoint, { method: 'PATCH', body: { components: [] } });
     }
     catch (err) {
-        console.log(err);
+        console.error(err);
         throw new Error('Failed to remove buttons from message: ' + messageId + ' in channel: ' + channelId);
     }
 }
 
+
+/**
+ * Fetches a public information about given guild.
+ * @param {any} guildId Id of given guild.
+ * @returns Object with guild details.
+ */
+export async function fetchGuild(guildId) {
+    const endpoint = '/guilds/' + guildId;
+
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'GET' });
+        const guild = await response.json()
+        return guild;
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to get guild details.');
+    }
+}
 
 /**
  * Fetches all available channels in guild.
@@ -161,8 +199,27 @@ export async function fetchGuildChannels(guildId) {
         return channels;
     }
     catch (err) {
-        console.log(err);
+        console.error(err);
         throw new Error('Failed to get channels for guild with id: ' + guildId);
+    }
+}
+
+
+/**
+ * Bans specific user in given guild.
+ * @param {any} userId Id of banned user.
+ * @param {any} guildId Id of given guild.
+ * @param {any} deleteMessageSeconds Optional parameter for removing previously posted messages by user.
+ */
+export async function issueBan(userId, guildId, deleteMessageSeconds=0) {
+    const endpoint = '/guilds/' + guildId + '/bans/' + userId;
+
+    try {
+        await DiscordRequest(endpoint, { method: 'PUT', body: { delete_message_seconds: deleteMessageSeconds } });
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to issue a ban on user: ' + userId + ' in guild: ' + guildId);
     }
 }
 

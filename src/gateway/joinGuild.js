@@ -1,4 +1,11 @@
-import { createDefaultTicketCategories } from '#src/ticket_system/ticket_category.js';
+import { ChannelTypes } from 'discord-interactions';
+import { fetchGuildChannels } from '#src/utils.js';
+import { getGuildTicketCategories, DEFAULT_CATEGORIES } from '#src/ticket_system/ticket_category.js'
+import { saveCategoryData } from '#src/ticket_system/ticket_repository.js';
+import {
+    INFO_CHANNEL_TYPES, saveInfoChannelData,
+    getGuildInfoChannels
+} from '#src/moderation_tools/moderation_repository.js'
 
 
 /**
@@ -7,4 +14,58 @@ import { createDefaultTicketCategories } from '#src/ticket_system/ticket_categor
  */
 export async function guildJoin(guild) {
     await createDefaultTicketCategories(guild.id);
+    await setDefaultModerationChannels(guild.id);
+}
+
+// Get text channels in guild and select one random to where send tickets
+async function getRandomTextChannel(guildId) {
+    const guildChannels = await fetchGuildChannels(guildId);
+    const textChannels = guildChannels.filter(channel => channel.type === ChannelTypes.GUILD_TEXT)
+    return textChannels[0];
+}
+
+/**
+ * Creates a new default ticket categories after joing a new server.
+ * @param {any} guildId Id of joined guild.
+ */
+async function createDefaultTicketCategories(guildId) {
+    try {
+        const defaultChannel = await getRandomTextChannel(guildId);
+
+        // Get previously created categories, so no modification is made on existing (in case bot was on server before)
+        const activeCategories = await getGuildTicketCategories(guildId);
+
+        // Add all non present default categories
+        for (const category of DEFAULT_CATEGORIES) {
+            if (!activeCategories.includes(category)) {
+                await saveCategoryData(guildId, category, defaultChannel.id);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Failed to set default ticket categories, caused by: ' + err);
+    }
+}
+
+/**
+ * Sets a default channel used for moderation actions information.
+ * @param {any} guildId Id of joined guild.
+ */
+async function setDefaultModerationChannels(guildId) {
+    try {
+        const defaultChannel = await getRandomTextChannel(guildId);
+
+        // Previously set channels are not modified (bot was on server before)
+        const setTypes = await getGuildInfoChannels(guildId);
+
+        // Types that are not set are set to default channel
+        for (const type of Object.values(INFO_CHANNEL_TYPES)) {
+            if (!setTypes.includes(type)) {
+                await saveInfoChannelData(guildId, defaultChannel.id, type);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Failed to set default info channel for moderation actions, caused by: ' + err);
+    }
 }

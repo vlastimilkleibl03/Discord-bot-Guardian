@@ -2,7 +2,7 @@ import {
     MessageComponentTypes, InteractionResponseType,
     ButtonStyleTypes
 } from 'discord-interactions';
-import { sendMessageToChannel, getUserMessageChannel } from '#src/utils.js';
+import { sendMessageToChannel, getUserMessageChannel, fetchGuild } from '#src/utils.js';
 import { errorInformation, replyInformation } from '#src/informative_replies/user_notification.js';
 import { saveTicketData, getGuildTicketChannel } from './ticket_repository.js';
 import {
@@ -92,8 +92,6 @@ export async function processTicketModal(res, sender, guild, formComponents) {
     }
 
     const categoryDisplay = categoryFormatName(category);
-    const adminMessage = buildAdminTicketMessage(categoryDisplay, description, sender);
-    const userMessage = buildUserTicketMessage(categoryDisplay, description, guild);
 
     try {
         // Check if ticket category is available for current guild
@@ -103,10 +101,13 @@ export async function processTicketModal(res, sender, guild, formComponents) {
         }
 
         // Data from ticket form are sent to preselect admin discord channel
+        const adminMessage = buildAdminTicketMessage(categoryDisplay, description, sender);
         const channelId = await getGuildTicketChannel(guild.id, category);
         const adminMessageId = await sendMessageToChannel(channelId, adminMessage);
 
         // Copy is also sent to user
+        const guildDetails = await fetchGuild(guild.id);
+        const userMessage = buildUserTicketMessage(categoryDisplay, description, guildDetails);
         const userMessageChannel = await getUserMessageChannel(sender.id)
         const userMessageId = await sendMessageToChannel(userMessageChannel, userMessage);
 

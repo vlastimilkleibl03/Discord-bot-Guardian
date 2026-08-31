@@ -40,7 +40,7 @@ export function errorInformation(res, err, description) {
  * Sends an informative message to user about insufficient permissions.
  * @param {any} res Object allowing to send a response for a http request.
  */
-export function permissionReply(res {
+export function permissionReply(res) {
     return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {

@@ -25,3 +25,34 @@ model TicketCategory {
   categoryChannel	String
   @@unique([guildId, categoryName])
 }
+
+model InfoChannel {
+  guildId			String
+  channelId			String
+  type				String
+  @@unique([guildId, type])
+}
+
+model ActiveBan {
+  guildId			String
+  userId			String
+  unbanDate			DateTime
+  @@unique([guildId, userId])
+}
+
+model BanRecord {
+  id				Int      @id @default(autoincrement())
+  guildId			String
+  userId			String
+  banDate			DateTime
+  unbanDate			DateTime
+  reason			String
+}
+
+model KickRecord {
+  id				Int      @id @default(autoincrement())
+  guildId			String
+  userId			String
+  kickDate			DateTime
+  reason			String
+}

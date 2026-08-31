@@ -5,13 +5,17 @@ import {
   InteractionType,
   verifyKeyMiddleware,
 } from 'discord-interactions';
+
 import { getOption } from './utils.js';
 import { discordClient } from './gateway/init.js';
+
 import { testReply } from './informative_replies/test.js';
 import { displayTicketModal, processTicketModal } from './ticket_system/open_ticket.js';
 import { displayReplyModal, processReplyAdmin, processReplyUser } from './ticket_system/reply_ticket.js';
 import { closeTicket } from './ticket_system/close_ticket.js';
 import { modifyTicketCategory, deleteTicketCategory } from './ticket_system/ticket_category.js';
+
+import { banUser } from './moderation_tools/ban.js';
 
 // Create an express app
 const app = express();
@@ -44,7 +48,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
         switch (name) {
             case 'test': return testReply(res);
             case 'ticket': return displayTicketModal(res, req.body.guild);
-            case 'add_category': return modifyTicketCategory(
+            case 'modify_category': return modifyTicketCategory(
                 res,
                 req.body.member,
                 req.body.guild.id,
@@ -57,6 +61,12 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 req.body.guild.id,
                 getOption(data, 'category_name')
             );
+            case 'ban': return banUser(
+                res,
+                req.body.member,
+                req.body.guild.id,
+                data
+            )
         }
 
         console.error(`unknown command: ${name}`);

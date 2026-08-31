@@ -59,6 +59,135 @@ const DELETE_CATEGORY_COMMAND = {
     ]
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, TICKET_COMMAND, MODIFY_CATEGORY_COMMAND, DELETE_CATEGORY_COMMAND];
+const BAN_COMMAND = {
+    name: 'ban',
+    description: 'Issue a ban to selected user.',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'user_select',
+            description: 'Select an user.',
+            type: 6,
+            required: true
+        },
+        {
+            name: 'ban_length_days',
+            description: 'Input number of days.',
+            type: 4,
+            required: true,
+            min_value: 1
+        },
+        {
+            name: 'ban_reason',
+            description: 'Reason of the ban.',
+            type: 3,
+            required: true,
+            max_length: 100
+        }
+    ]
+};
+
+const KICK_COMMAND = {
+    name: 'kick',
+    description: 'Kick a selected user out of server.',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'user_select',
+            description: 'Select an user.',
+            type: 6,
+            required: true
+        },
+        {
+            name: 'kick_reason',
+            description: 'Reason of the kick.',
+            type: 3,
+            required: true,
+            max_length: 100
+        }
+    ]
+};
+
+const MUTE_COMMAND = {
+    name: 'mute',
+    description: 'Mute a selected user in server (can not send messages or join voice rooms)',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'user_select',
+            description: 'Select an user.',
+            type: 6,
+            required: true
+        },
+        {
+            name: 'mute_length_hours',
+            description: 'Input number of hours.',
+            type: 4,
+            required: true,
+            min_value: 1
+        },
+        {
+            name: 'mute_reason',
+            description: 'Reason of the mute.',
+            type: 3,
+            required: true,
+            max_length: 100
+        }
+    ]
+}
+
+const SET_INFO_CHANNEL = {
+    name: 'set_info_channel',
+    description: 'Modify channel for sending information about moderation actions.',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'type',
+            description: 'Select moderation type',
+            type: 3,
+            required: true,
+            choices: [
+                {
+                    name: 'ban',
+                    value: 'ban',
+                },
+                {
+                    name: 'kick',
+                    value: 'kick',
+                },
+                {
+                    name: 'mute',
+                    value: 'mute'
+                }
+            ]
+        },
+        {
+            name: 'channel',
+            description: 'Select a text channel for info messages.',
+            type: 7,
+            channel_types: [ChannelTypes.GUILD_TEXT],
+            required: true
+        }
+    ]
+};
+
+const ALL_COMMANDS = [
+    TEST_COMMAND,
+    TICKET_COMMAND,
+    MODIFY_CATEGORY_COMMAND,
+    DELETE_CATEGORY_COMMAND,
+    BAN_COMMAND,
+    KICK_COMMAND,
+    MUTE_COMMAND,
+    SET_INFO_CHANNEL,
+];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
