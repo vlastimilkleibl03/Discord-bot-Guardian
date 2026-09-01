@@ -8,6 +8,7 @@ import {
 
 import { getOption } from './utils.js';
 import { discordClient } from './gateway/init.js';
+import { startPeriodicJobs } from './periodic_jobs/init.js'
 
 import { testReply } from './informative_replies/test.js';
 import { displayTicketModal, processTicketModal } from './ticket_system/open_ticket.js';
@@ -16,6 +17,8 @@ import { closeTicket } from './ticket_system/close_ticket.js';
 import { modifyTicketCategory, deleteTicketCategory } from './ticket_system/ticket_category.js';
 
 import { banUser } from './moderation_tools/ban.js';
+import { kickUser } from './moderation_tools/kick.js';
+import { modifyInfoChannel } from './moderation_tools/info_management.js';
 
 // Create an express app
 const app = express();
@@ -66,7 +69,20 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 req.body.member,
                 req.body.guild.id,
                 data
-            )
+            );
+            case 'kick': return kickUser(
+                res,
+                req.body.member,
+                req.body.guild.id,
+                data
+            );
+            case 'set_info_channel': return modifyInfoChannel(
+                res,
+                req.body.member,
+                req.body.guild.id,
+                getOption(data, 'type'),
+                getOption(data, 'channel')
+            );
         }
 
         console.error(`unknown command: ${name}`);
@@ -108,5 +124,6 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
 
 app.listen(PORT, () => {
     discordClient.login(process.env.DISCORD_TOKEN);
+    startPeriodicJobs();
     console.log('Listening on port', PORT);
 });

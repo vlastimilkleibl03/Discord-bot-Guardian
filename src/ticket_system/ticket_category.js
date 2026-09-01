@@ -1,5 +1,6 @@
 import { capitalize } from '#src/utils.js';
 import { replyInformation, errorInformation, permissionReply } from '#src/informative_replies/user_notification.js';
+import { hasModifyPermission } from '#src/permissions/permission_check.js';
 import { loadGuildTicketCategories, saveCategoryData, deleteCategory } from './ticket_repository.js';
 
 
@@ -48,13 +49,6 @@ export async function deleteTicketCategory(res, sender, guildId, categoryName) {
     }
 
     return replyInformation(res, 'Successfully removed category: ' + categoryName);
-}
-
-function hasModifyPermission(guildMember) {
-    const permissions = BigInt(guildMember.permissions);
-    const ADMINISTRATOR = 1n << 3n;
-
-    return (permissions & ADMINISTRATOR) !== 0n;
 }
 
 

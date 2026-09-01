@@ -7,6 +7,7 @@ import {
     permissionReply, errorInformation,
     replyInformation
 } from '#src/informative_replies/user_notification.js';
+import { hasBanPermission } from '#src/permissions/permission_check.js';
 import { setActiveBan, setBanRecord, getBanInfoChannel } from './moderation_repository.js'
 
 
@@ -54,13 +55,6 @@ export async function banUser(res, sender, guildId, parameters) {
     return replyInformation(res, 'User banned.', true);
 }
 
-function hasBanPermission(guildMember) {
-    const permissions = BigInt(guildMember.permissions);
-    const BAN_USERS = 1n << 2n;
-    const ADMINISTRATOR = 1n << 3n;
-
-    return (permissions & ADMINISTRATOR) !== 0n || (permissions & BAN_USERS) !== 0n;
-}
 
 async function buildAdminBanMessage(moderator, bannedUserId, unbanDate, banReason) {
     let bannedUserName;

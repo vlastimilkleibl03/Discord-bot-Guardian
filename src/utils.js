@@ -223,6 +223,40 @@ export async function issueBan(userId, guildId, deleteMessageSeconds=0) {
     }
 }
 
+/**
+ * Removes ban of specific user in given guild.
+ * @param {any} userId Id of banned user.
+ * @param {any} guildId Id of given guild.
+ */
+export async function unbanUser(userId, guildId) {
+    const endpoint = '/guilds/' + guildId + '/bans/' + userId;
+
+    try {
+        await DiscordRequest(endpoint, { method: 'DELETE' });
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to unban user: ' + userId + ' in guild: ' + guildId);
+    }
+}
+
+/**
+ * Kicks a specific user from given guild.
+ * @param {any} userId Id of kicked user.
+ * @param {any} guildId Id of given guild.
+ */
+export async function performKick(userId, guildId) {
+    const endpoint = '/guilds/' + guildId + '/members/' + userId;
+
+    try {
+        await DiscordRequest(endpoint, { method: 'DELETE' });
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to kick user: ' + userId + ' from guild: ' + guildId);
+    }
+}
+
 
 // Simple method that returns a random emoji from list
 export function getRandomEmoji() {

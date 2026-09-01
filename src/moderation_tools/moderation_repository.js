@@ -17,14 +17,43 @@ export const INFO_CHANNEL_TYPES = {
  * @param {any} unbanDate Scheduled date for unban.
  */
 export async function setActiveBan(userId, guildId, unbanDate) {
-    await db.activeBan.create({
-        data: {
-            guildId,
-            userId,
-            unbanDate
-        }
+    await db.activeBan.upsert({
+        where: { guildId_userId: { guildId, userId } },
+        create: { guildId, userId, unbanDate },
+        update: { unbanDate }
     });
 }
+
+/**
+ * Returns all ban info objects that expired to given date.
+ * @param {any} toDate Bordeline date for bans expiration.
+ * @returns Array of expired bans.
+ */
+export async function getExpiredBans(toDate) {
+    const result = await db.activeBan.findMany({
+        where: {
+            unbanDate: {
+                lt: toDate
+            }
+        }
+    });
+
+    return result;
+}
+
+/**
+ * Removes an active ban record from a database.
+ * @param {any} guildId Id of given where ban is removes.
+ * @param {any} userId Id of banned user.
+ */
+export async function removeActiveBan(guildId, userId) {
+    await db.activeBan.delete({
+        where: {
+            guildId_userId: {guildId, userId}
+        }
+    })
+}
+
 
 
 // MODERATION RECORDS
@@ -48,6 +77,25 @@ export async function setBanRecord(userId, guildId, bannedFrom, bannedTo, reason
         }
     });
 }
+
+/**
+ * Saves details about user kick to database.
+ * @param {any} userId Id of kicked user.
+ * @param {any} guildId Id of guild where user was kicked out.
+ * @param {any} date DateTime of kick.
+ * @param {any} reason Kick reason.
+ */
+export async function setKickRecord(userId, guildId, date, reason) {
+    await db.kickRecord.create({
+        data: {
+            userId,
+            guildId,
+            kickDate: date,
+            reason
+        }
+    });
+}
+
 
 
 // INFORMATION CHANNELS
@@ -76,7 +124,7 @@ export async function getGuildInfoChannels(guildId) {
         where: {
             guildId
         }
-    })
+    });
 
     return result;
 }
@@ -87,10 +135,23 @@ export async function getGuildInfoChannels(guildId) {
  * @returns Id of channel set for guild.
  */
 export async function getBanInfoChannel(guildId) {
+    return await getInfoChannel(guildId, INFO_CHANNEL_TYPES.BAN);
+}
+
+/**
+ * Returns a channel where informational messages about kicks are sent in server.
+ * @param {any} guildId Id of given server.
+ * @returns Id of channel set for guild.
+ */
+export async function getKickInfoChannel(guildId) {
+    return await getInfoChannel(guildId, INFO_CHANNEL_TYPES.KICK);
+}
+
+async function getInfoChannel(guildId, type) {
     const result = await db.infoChannel.findFirst({
         where: {
             guildId,
-            type: INFO_CHANNEL_TYPES.BAN
+            type: type
         }
     });
 

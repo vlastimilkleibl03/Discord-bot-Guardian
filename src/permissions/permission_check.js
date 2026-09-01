@@ -1,0 +1,44 @@
+// PERMISSION TYPES
+const KICK_USERS = 1n << 1n;
+const BAN_USERS = 1n << 2n;
+const ADMINISTRATOR = 1n << 3n;
+
+function hasPermission(guildMember, permissions) {
+    const userPermissions = BigInt(guildMember.permissions);
+
+    for (const permission of permissions) {
+        if ((userPermissions & permission) !== 0n) {
+            return true
+        }
+    }
+
+    return false;
+}
+
+
+/**
+ * Decides if user has permissions for kick command.
+ * @param {any} guildMember User who invoked the command.
+ * @returns True if user can perform the kick, otherwise false.
+ */
+export function hasKickPermission(guildMember) {
+    return hasPermission(guildMember, [KICK_USERS, ADMINISTRATOR]);
+}
+
+/**
+ * Decides if user has permissions for ban command.
+ * @param {any} guildMember User who invoked the command.
+ * @returns True if user can issue the ban, otherwise false.
+ */
+export function hasBanPermission(guildMember) {
+    return hasPermission(guildMember, [BAN_USERS, ADMINISTRATOR]);
+}
+
+/**
+ * Decides if user has permissions for modifing commands.
+ * @param {any} guildMember
+ * @returns
+ */
+export function hasModifyPermission(guildMember) {
+    return hasPermission(guildMember, [ADMINISTRATOR]);
+}
