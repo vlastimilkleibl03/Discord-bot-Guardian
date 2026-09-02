@@ -96,6 +96,18 @@ export async function setKickRecord(userId, guildId, date, reason) {
     });
 }
 
+export async function setMuteRecord(userId, guildId, date, length, reason) {
+    await db.muteRecord.create({
+        data: {
+            userId,
+            guildId,
+            muteDate: date,
+            length,
+            reason
+        }
+    });
+}
+
 
 
 // INFORMATION CHANNELS
@@ -146,6 +158,16 @@ export async function getBanInfoChannel(guildId) {
 export async function getKickInfoChannel(guildId) {
     return await getInfoChannel(guildId, INFO_CHANNEL_TYPES.KICK);
 }
+
+/**
+ * Returns a channel where informational messages about mutes are sent in server.
+ * @param {any} guildId Id of given server.
+ * @returns Id of channel set for guild.
+ */
+export async function getMuteInfoChannel(guildId) {
+    return await getInfoChannel(guildId, INFO_CHANNEL_TYPES.MUTE);
+}
+
 
 async function getInfoChannel(guildId, type) {
     const result = await db.infoChannel.findFirst({

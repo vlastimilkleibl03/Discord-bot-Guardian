@@ -1,3 +1,4 @@
+import { fetchGuild, fetchUser } from '#src/utils.js'
 import { saveInfoChannelData, INFO_CHANNEL_TYPES } from './moderation_repository.js';
 import {
     errorInformation, replyInformation,
@@ -32,4 +33,36 @@ export async function modifyInfoChannel(res, sender, guildId, type, channelId) {
     }
 
     return replyInformation(res, 'Successfully modified info channel for moderation type: ' + type);
+}
+
+/**
+ * Fetches and returns a public guild name.
+ * @param {any} guildId Id of searched guild.
+ * @returns Name of guild or Unknown server if error occured.
+ */
+export async function getGuildName(guildId) {
+    try {
+        const guild = await fetchGuild(guildId);
+        return guild.name;
+    }
+    catch (err) {
+        console.error(err);
+        return 'Unknown server';
+    }
+}
+
+/**
+ * Fetches and returns a public username.
+ * @param {any} userId Id of searched user.
+ * @returns Name of user or Unknown user if error occured.
+ */
+export async function getUserName(userId) {
+    try {
+        const user = await fetchUser(userId);
+        return user.username;
+    }
+    catch (err) {
+        console.error(err);
+        return 'Unknown user';
+    }
 }

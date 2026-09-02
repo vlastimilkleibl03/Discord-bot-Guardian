@@ -68,7 +68,7 @@ const BAN_COMMAND = {
     options: [
         {
             name: 'user_select',
-            description: 'Select an user.',
+            description: 'Select a user.',
             type: 6,
             required: true
         },
@@ -98,7 +98,7 @@ const KICK_COMMAND = {
     options: [
         {
             name: 'user_select',
-            description: 'Select an user.',
+            description: 'Select a user.',
             type: 6,
             required: true
         },
@@ -121,7 +121,7 @@ const MUTE_COMMAND = {
     options: [
         {
             name: 'user_select',
-            description: 'Select an user.',
+            description: 'Select a user.',
             type: 6,
             required: true
         },

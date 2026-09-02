@@ -18,7 +18,9 @@ import { modifyTicketCategory, deleteTicketCategory } from './ticket_system/tick
 
 import { banUser } from './moderation_tools/ban.js';
 import { kickUser } from './moderation_tools/kick.js';
+import { muteUser } from './moderation_tools/mute.js';
 import { modifyInfoChannel } from './moderation_tools/info_management.js';
+
 
 // Create an express app
 const app = express();
@@ -71,6 +73,12 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 data
             );
             case 'kick': return kickUser(
+                res,
+                req.body.member,
+                req.body.guild.id,
+                data
+            );
+            case 'mute': return muteUser(
                 res,
                 req.body.member,
                 req.body.guild.id,

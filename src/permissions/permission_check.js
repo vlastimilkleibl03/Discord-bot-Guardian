@@ -2,6 +2,7 @@
 const KICK_USERS = 1n << 1n;
 const BAN_USERS = 1n << 2n;
 const ADMINISTRATOR = 1n << 3n;
+const MODERATOR_MUTE = 1n << 40n;
 
 function hasPermission(guildMember, permissions) {
     const userPermissions = BigInt(guildMember.permissions);
@@ -36,9 +37,18 @@ export function hasBanPermission(guildMember) {
 
 /**
  * Decides if user has permissions for modifing commands.
- * @param {any} guildMember
- * @returns
+ * @param {any} guildMember User who invoked the command.
+ * @returns True if user can modify the bot specific features, otherwise false.
  */
 export function hasModifyPermission(guildMember) {
     return hasPermission(guildMember, [ADMINISTRATOR]);
+}
+
+/**
+ * Decides if user has permissions for mute command.
+ * @param {any} guildMember User who invoked the command.
+ * @returns True if user can mute other users, otherwise false.
+ */
+export function hasMutePermission(guildMember) {
+    return hasPermission(guildMember, [ADMINISTRATOR, MODERATOR_MUTE])
 }

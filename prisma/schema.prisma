@@ -56,3 +56,12 @@ model KickRecord {
   kickDate			DateTime
   reason			String
 }
+
+model MuteRecord {
+  id				Int      @id @default(autoincrement())
+  guildId			String
+  userId			String
+  muteDate			DateTime
+  length			Int
+  reason			String
+}

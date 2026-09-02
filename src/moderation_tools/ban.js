@@ -1,18 +1,18 @@
 import {
     getOption, issueBan,
     sendMessageToChannel, getUserMessageChannel,
-    fetchUser, fetchGuild
 } from '#src/utils.js';
 import {
     permissionReply, errorInformation,
     replyInformation
 } from '#src/informative_replies/user_notification.js';
 import { hasBanPermission } from '#src/permissions/permission_check.js';
-import { setActiveBan, setBanRecord, getBanInfoChannel } from './moderation_repository.js'
+import { setActiveBan, setBanRecord, getBanInfoChannel } from './moderation_repository.js';
+import { getGuildName, getUserName } from './info_management.js';
 
 
 /**
- * Temporarily bans an user in guild.
+ * Temporarily bans a user in guild.
  * @param {any} res Object allowing to send a response for a http request.
  * @param {any} sender User who invoked the command, user for permission check and information.
  * @param {any} guildId Id of guild where user will be banned.
@@ -49,7 +49,7 @@ export async function banUser(res, sender, guildId, parameters) {
         await setBanRecord(bannedUserId, guildId, new Date(), unbanDate, banReason);
     }
     catch (err) {
-        return errorInformation(res, err, 'Failed to ban an user.');
+        return errorInformation(res, err, 'Failed to ban a user.');
     }
 
     return replyInformation(res, 'User banned.', true);
@@ -57,15 +57,7 @@ export async function banUser(res, sender, guildId, parameters) {
 
 
 async function buildAdminBanMessage(moderator, bannedUserId, unbanDate, banReason) {
-    let bannedUserName;
-    try {
-        const bannedUser = await fetchUser(bannedUserId);
-        bannedUserName = bannedUser.username;
-    }
-    catch (err) {
-        console.error(err);
-        bannedUserName = 'Unknown user';
-    }
+    const bannedUserName = await getUserName(bannedUserId);
 
     return {
         embeds: [
@@ -97,15 +89,7 @@ async function buildAdminBanMessage(moderator, bannedUserId, unbanDate, banReaso
 }
 
 async function buildUserBanMessage(guildId, unbanDate, banReason) {
-    let bannedGuildName;
-    try {
-        const bannedGuild = await fetchGuild(guildId);
-        bannedGuildName = bannedGuild.name;
-    }
-    catch (err) {
-        console.error(err);
-        bannedGuildName = 'Unknown server';
-    }
+    const bannedGuildName = await getGuildName(guildId);
 
     return {
         embeds: [

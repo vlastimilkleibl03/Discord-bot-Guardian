@@ -1,5 +1,5 @@
 import { ChannelTypes } from 'discord-interactions';
-import { fetchGuildChannels } from '#src/utils.js';
+import { createGuildChannel } from '#src/utils.js';
 import { getGuildTicketCategories, DEFAULT_CATEGORIES } from '#src/ticket_system/ticket_category.js'
 import { saveCategoryData } from '#src/ticket_system/ticket_repository.js';
 import {
@@ -17,12 +17,6 @@ export async function guildJoin(guild) {
     await setDefaultModerationChannels(guild.id);
 }
 
-// Get text channels in guild and select one random to where send tickets
-async function getRandomTextChannel(guildId) {
-    const guildChannels = await fetchGuildChannels(guildId);
-    const textChannels = guildChannels.filter(channel => channel.type === ChannelTypes.GUILD_TEXT)
-    return textChannels[0];
-}
 
 /**
  * Creates a new default ticket categories after joing a new server.
@@ -30,7 +24,7 @@ async function getRandomTextChannel(guildId) {
  */
 async function createDefaultTicketCategories(guildId) {
     try {
-        const defaultChannel = await getRandomTextChannel(guildId);
+        let defaultChannel = null;
 
         // Get previously created categories, so no modification is made on existing (in case bot was on server before)
         const activeCategories = await getGuildTicketCategories(guildId);
@@ -38,6 +32,10 @@ async function createDefaultTicketCategories(guildId) {
         // Add all non present default categories
         for (const category of DEFAULT_CATEGORIES) {
             if (!activeCategories.includes(category)) {
+                // If channel is not set, create new
+                if (defaultChannel === null) {
+                    defaultChannel = await createGuildChannel(guildId, 'Guardian-tickets', ChannelTypes.GUILD_TEXT);
+                }
                 await saveCategoryData(guildId, category, defaultChannel.id);
             }
         }
@@ -53,7 +51,7 @@ async function createDefaultTicketCategories(guildId) {
  */
 async function setDefaultModerationChannels(guildId) {
     try {
-        const defaultChannel = await getRandomTextChannel(guildId);
+        let defaultChannel = null;
 
         // Previously set channels are not modified (bot was on server before)
         const setTypes = await getGuildInfoChannels(guildId);
@@ -61,6 +59,9 @@ async function setDefaultModerationChannels(guildId) {
         // Types that are not set are set to default channel
         for (const type of Object.values(INFO_CHANNEL_TYPES)) {
             if (!setTypes.includes(type)) {
+                if (defaultChannel === null) {
+                    defaultChannel = await createGuildChannel(guildId, 'Guardian-moderation', ChannelTypes.GUILD_TEXT);
+                }
                 await saveInfoChannelData(guildId, defaultChannel.id, type);
             }
         }

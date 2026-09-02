@@ -204,6 +204,30 @@ export async function fetchGuildChannels(guildId) {
     }
 }
 
+/**
+ * Creates a new channel in guild and returns its object.
+ * @param {any} guildId Id of guild where channel is created.
+ * @param {any} channelName Name of the new channel.
+ * @param {any} channelType Type of a new channel.
+ * @returns
+ */
+export async function createGuildChannel(guildId, channelName, channelType) {
+    const endpoint = '/guilds/' + guildId + '/channels';
+
+    try {
+        const response = await DiscordRequest(endpoint, {
+            method: 'POST',
+            body: { name: channelName, type: channelType }
+        });
+        const channel = await response.json()
+        return channel;
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to create a new channel in guild with id: ' + guildId);
+    }
+}
+
 
 /**
  * Bans specific user in given guild.
@@ -256,6 +280,26 @@ export async function performKick(userId, guildId) {
         throw new Error('Failed to kick user: ' + userId + ' from guild: ' + guildId);
     }
 }
+
+/**
+ * Mutes a specific user in given guild for set time.
+ * @param {any} userId Id of muted user.
+ * @param {any} guildId Id of given guild.
+ * @param {any} length Mute time in hours.
+ */
+export async function setMuteInGuild(userId, guildId, length) {
+    const endpoint = '/guilds/' + guildId + '/members/' + userId;
+    const timeoutUntil = new Date(Date.now() + length * 3600 * 1000).toISOString();
+
+    try {
+        await DiscordRequest(endpoint, { method: 'PATCH', body: { communication_disabled_until: timeoutUntil } });
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to mute user: ' + userId + ' in guild: ' + guildId);
+    }
+}
+
 
 
 // Simple method that returns a random emoji from list

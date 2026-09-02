@@ -1,7 +1,6 @@
 import {
     getOption, performKick,
     sendMessageToChannel, getUserMessageChannel,
-    fetchUser, fetchGuild
 } from '#src/utils.js';
 import {
     permissionReply, errorInformation,
@@ -9,12 +8,13 @@ import {
 } from '#src/informative_replies/user_notification.js';
 import { hasKickPermission } from '#src/permissions/permission_check.js';
 import { setKickRecord, getKickInfoChannel } from './moderation_repository.js'
+import { getGuildName, getUserName } from './info_management.js'
 
 
 /**
- * Temporarily bans an user in guild.
+ * Kicks a user from a guild.
  * @param {any} res Object allowing to send a response for a http request.
- * @param {any} sender User who invoked the command, user for permission check and information.
+ * @param {any} sender User who invoked the command, used for permission check and information.
  * @param {any} guildId Id of guild where user will be kicked.
  * @param {any} parameters Raw command parameters.
  */
@@ -42,7 +42,7 @@ export async function kickUser(res, sender, guildId, parameters) {
         await setKickRecord(kickedUserId, guildId, new Date(), kickReason);
     }
     catch (err) {
-        return errorInformation(res, err, 'Failed to kick an user.');
+        return errorInformation(res, err, 'Failed to kick a user.');
     }
 
     return replyInformation(res, 'User kicked.', true);
@@ -50,15 +50,7 @@ export async function kickUser(res, sender, guildId, parameters) {
 
 
 async function buildAdminKickMessage(moderator, kickedUserId, kickReason) {
-    let kickedUserName;
-    try {
-        const kickedUser = await fetchUser(kickedUserId);
-        kickedUserName = kickedUser.username;
-    }
-    catch (err) {
-        console.error(err);
-        kickedUserName = 'Unknown user';
-    }
+    const kickedUserName = await getUserName(kickedUserId);
 
     return {
         embeds: [
@@ -86,15 +78,7 @@ async function buildAdminKickMessage(moderator, kickedUserId, kickReason) {
 }
 
 async function buildUserKickMessage(guildId, kickReason) {
-    let kickedGuildName;
-    try {
-        const kickedGuild = await fetchGuild(guildId);
-        kickedGuildName = kickedGuild.name;
-    }
-    catch (err) {
-        console.error(err);
-        kickedGuildName = 'Unknown server';
-    }
+    const kickedGuildName = getGuildName(guildId);
 
     return {
         embeds: [
