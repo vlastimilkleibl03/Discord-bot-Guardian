@@ -5,6 +5,7 @@ export const INFO_CHANNEL_TYPES = {
     BAN: 'ban',
     KICK: 'kick',
     MUTE: 'mute',
+    USER_JOIN: 'user_join',
 }
 
 
@@ -79,6 +80,23 @@ export async function setBanRecord(userId, guildId, bannedFrom, bannedTo, reason
 }
 
 /**
+ * Returns all recorded bans on user in guild.
+ * @param {any} userId Id of examined user.
+ * @param {any} guildId Id of guild where bans are recorded.
+ * @returns Array of all bans user got in guild.
+ */
+export async function getUserBans(userId, guildId) {
+    const result = await db.banRecord.findMany({
+        where: {
+            userId,
+            guildId
+        }
+    });
+
+    return result;
+}
+
+/**
  * Saves details about user kick to database.
  * @param {any} userId Id of kicked user.
  * @param {any} guildId Id of guild where user was kicked out.
@@ -96,6 +114,23 @@ export async function setKickRecord(userId, guildId, date, reason) {
     });
 }
 
+/**
+ * Returns all recorded kicks on user in guild.
+ * @param {any} userId Id of examined user.
+ * @param {any} guildId Id of guild where kicks are recorded.
+ * @returns Array of all kicks user got in guild.
+ */
+export async function getUserKicks(userId, guildId) {
+    const result = await db.kickRecord.findMany({
+        where: {
+            userId,
+            guildId
+        }
+    });
+
+    return result;
+}
+
 export async function setMuteRecord(userId, guildId, date, length, reason) {
     await db.muteRecord.create({
         data: {
@@ -106,6 +141,23 @@ export async function setMuteRecord(userId, guildId, date, length, reason) {
             reason
         }
     });
+}
+
+/**
+ * Returns all recorded mutes on user in guild.
+ * @param {any} userId Id of examined user.
+ * @param {any} guildId Id of guild where mutes are recorded.
+ * @returns Array of all mutes user got in guild.
+ */
+export async function getUserMutes(userId, guildId) {
+    const result = await db.muteRecord.findMany({
+        where: {
+            userId,
+            guildId
+        }
+    });
+
+    return result;
 }
 
 
@@ -166,6 +218,15 @@ export async function getKickInfoChannel(guildId) {
  */
 export async function getMuteInfoChannel(guildId) {
     return await getInfoChannel(guildId, INFO_CHANNEL_TYPES.MUTE);
+}
+
+/**
+ * Returns a channel where informational messages about joining new users are sent in server.
+ * @param {any} guildId Id of given server.
+ * @returns Id of channel set for guild.
+ */
+export async function getUserJoinInfoChannel(guildId) {
+    return await getInfoChannel(guildId, INFO_CHANNEL_TYPES.USER_JOIN);
 }
 
 

@@ -20,6 +20,20 @@ export function replyInformation(res, description, hidden=false) {
 }
 
 /**
+ * Sends an informative message to user as embed message.
+ * @param {any} res Object allowing to send a response for a http request.
+ * @param {any} embedContent Array of embed content objects.
+ */
+export function replyEmbed(res, embedContent) {
+    return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+            embeds: [...embedContent]
+        }
+    });
+}
+
+/**
  * Sends an informative message to user and logs the caused error.
  * @param {any} res Object allowing to send a response for a http request.
  * @param {any} err Error object, that is logged to a console.

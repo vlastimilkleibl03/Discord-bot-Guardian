@@ -19,7 +19,7 @@ import { modifyTicketCategory, deleteTicketCategory } from './ticket_system/tick
 import { banUser } from './moderation_tools/ban.js';
 import { kickUser } from './moderation_tools/kick.js';
 import { muteUser } from './moderation_tools/mute.js';
-import { modifyInfoChannel } from './moderation_tools/info_management.js';
+import { modifyInfoChannel, displayUserRecords } from './moderation_tools/info_management.js';
 
 
 // Create an express app
@@ -91,6 +91,12 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 getOption(data, 'type'),
                 getOption(data, 'channel')
             );
+            case 'user_record': return displayUserRecords(
+                res,
+                req.body.member,
+                req.body.guild.id,
+                getOption(data, 'user_select'),
+            )
         }
 
         console.error(`unknown command: ${name}`);

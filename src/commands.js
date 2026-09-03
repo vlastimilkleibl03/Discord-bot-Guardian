@@ -166,6 +166,10 @@ const SET_INFO_CHANNEL = {
                 {
                     name: 'mute',
                     value: 'mute'
+                },
+                {
+                    name: 'user_join',
+                    value: 'user_join'
                 }
             ]
         },
@@ -174,6 +178,22 @@ const SET_INFO_CHANNEL = {
             description: 'Select a text channel for info messages.',
             type: 7,
             channel_types: [ChannelTypes.GUILD_TEXT],
+            required: true
+        }
+    ]
+};
+
+const USER_RECORD = {
+    name: 'user_record',
+    description: 'Display all moderation actions, that was used on user before.',
+    type: 1,
+    integration_types: [0],
+    contexts: [0],
+    options: [
+        {
+            name: 'user_select',
+            description: 'Select a user.',
+            type: 6,
             required: true
         }
     ]
@@ -188,6 +208,7 @@ const ALL_COMMANDS = [
     KICK_COMMAND,
     MUTE_COMMAND,
     SET_INFO_CHANNEL,
+    USER_RECORD,
 ];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

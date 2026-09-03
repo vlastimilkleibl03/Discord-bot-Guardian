@@ -52,3 +52,14 @@ export function hasModifyPermission(guildMember) {
 export function hasMutePermission(guildMember) {
     return hasPermission(guildMember, [ADMINISTRATOR, MODERATOR_MUTE])
 }
+
+/**
+ * Decides if user has permissions for display user moderation records.
+ * @param {any} guildMember User who invoked the command.
+ * @param {any} displayUserId Id of user which records are displayed.
+ * @returns True if user can display user moderation records, otherwise false.
+ */
+export function hasDisplayRecordPermission(guildMember, displayUserId) {
+    return guildMember.user.id === displayUserId
+        || hasPermission(guildMember, [ADMINISTRATOR, MODERATOR_MUTE, KICK_USERS, BAN_USERS]);
+}

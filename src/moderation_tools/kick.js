@@ -78,7 +78,7 @@ async function buildAdminKickMessage(moderator, kickedUserId, kickReason) {
 }
 
 async function buildUserKickMessage(guildId, kickReason) {
-    const kickedGuildName = getGuildName(guildId);
+    const kickedGuildName = await getGuildName(guildId);
 
     return {
         embeds: [
