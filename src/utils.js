@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import { config } from './config.js';
+
 
 export async function DiscordRequest(endpoint, options) {
   // append endpoint to root API URL
@@ -7,8 +8,8 @@ export async function DiscordRequest(endpoint, options) {
   if (options.body) options.body = JSON.stringify(options.body);
   // Use fetch to make requests
   const res = await fetch(url, {
-    headers: {
-      Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
+      headers: {
+       Authorization: `Bot ${config.DISCORD_TOKEN}`,
       'Content-Type': 'application/json; charset=UTF-8',
       'User-Agent': 'Discord bot Guardian (https://github.com/vlastimilkleibl03/Discord-bot-Guardian)',
     },
@@ -22,6 +23,49 @@ export async function DiscordRequest(endpoint, options) {
   }
   // return original response
   return res;
+}
+
+/**
+ * Fetches user account details from discord using authorization code.
+ * @param {string} code Authorization code provided in discord auth callback.
+ * @returns Object with user details.
+ */
+export async function AuthenticateDiscordUser(code) {
+    const tokenResponse = await fetch(
+        'https://discord.com/api/oauth2/token',
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                client_id: config.APP_ID,
+                client_secret: config.CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: config.REDIRECT_URI,
+            }),
+        }
+    );
+    if (!tokenResponse.ok) {
+        console.error(await tokenResponse.text());
+        throw new Error('Unable to get Discord token.')
+    }
+    const tokens = await tokenResponse.json();
+
+    const userResponse = await fetch(
+        'https://discord.com/api/users/@me',
+        {
+            headers: {
+                Authorization: `Bearer ${tokens.access_token}`,
+            },
+        }
+    );
+    if (!userResponse.ok) {
+        throw new Error('Unable to load user detaSils.');
+    }
+
+    return await userResponse.json();
 }
 
 export async function InstallGlobalCommands(appId, commands) {

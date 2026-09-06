@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord bot Guardian</title>
+
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+    <h1>Dashboard</h1>
+
+    <div id="loading">
+        Loading...
+    </div>
+
+    <div id="dashboard" hidden>
+        <p>Hi <span id="username"></span>!</p>
+
+        <a href="/logout">Log out</a>
+    </div>
+
+    <div id="error" hidden>
+        Unlogged user, please log in to display your account.
+        <a href="/auth/discord">Log in</a>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

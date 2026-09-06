@@ -1,12 +1,17 @@
-import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
+import session from 'express-session';
+import helmet from 'helmet'
+import crypto from 'crypto';
 import {
   InteractionResponseType,
   InteractionType,
   verifyKeyMiddleware,
 } from 'discord-interactions';
 
-import { getOption } from './utils.js';
+import { config } from './config.js'
+import { getOption, AuthenticateDiscordUser } from './utils.js';
 import { discordClient } from './gateway/init.js';
 import { startPeriodicJobs } from './periodic_jobs/init.js'
 
@@ -22,17 +27,138 @@ import { muteUser } from './moderation_tools/mute.js';
 import { modifyInfoChannel, displayUserRecords } from './moderation_tools/info_management.js';
 
 
+// CREATE APPLICATION
+
+// Resolve the current file and its directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Create an express app
 const app = express();
 // Get port, or default to 3000
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT || 3000;
 
+app.use(helmet());
+
+// Set required proxy level, can be customized
+app.set('trust proxy', 1);
+
+// Set to use sessions, needed for authentication
+app.use(session({
+    secret: config.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+    }
+}));
+
+// Provide folder with static file for a web
+app.use(express.static(path.join(__dirname, 'public_web')));
+
+
+
+// API handlers
+
+/**
+ * Provides details about authenticated user.
+ */
+app.get('/api/me', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({
+            error: 'Not authenticated.'
+        });
+    }
+
+    res.json(req.session.user);
+});
+
+
+
+// OTHER WEB ROUTES LOGIC
+
+/**
+ * Prepares for a user authentication process provided by discord.
+ */
+app.get('/auth/discord', (req, res) => {
+    const state = crypto.randomBytes(32).toString('hex');
+    req.session.oauthState = state;
+
+    const params = new URLSearchParams({
+        client_id: config.APP_ID,
+        redirect_uri: config.REDIRECT_URI,
+        response_type: 'code',
+        scope: 'identify',
+        state
+    });
+
+    res.redirect('https://discord.com/oauth2/authorize?' + params);
+});
+
+/**
+ * Processes callback from discord user authentication and fetches user details.
+ */
+app.get('/auth/discord/callback', async (req, res) => {
+    const { code, state } = req.query;
+
+    // Validate incoming data from discord
+    if (typeof code !== 'string' || typeof state !== 'string') {
+        return res.status(400).send('Invalid OAuth request.');
+    }
+    if (state !== req.session.oauthState) {
+        return res.status(403).send('Not valid OAuth state.');
+    }
+    delete req.session.oauthState;
+
+    try {
+        // Get user details from discord
+        const user = await AuthenticateDiscordUser(code);
+
+        // Setup a new session after login and save user data
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Unable to create session.');
+            }
+
+            req.session.user = {
+                id: user.id,
+                username: user.global_name ?? user.username,
+                avatar: user.avatar,
+            };
+
+            res.redirect('/dashboard.html');
+        });
+    }
+    catch (err) {
+        delete req.session.user;
+        res.status(500).send('Authentication failed.');
+        return;
+    }
+});
+
+/**
+ * Ends an active session and redirects to a main page.
+ */
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/');
+    });
+});
+
+
+
+
+
+// DISCORD BOT INTERACTIONS PART
 
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
  * Parse request body and verifies incoming requests using discord-interactions package
  */
-app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
+app.post('/interactions', verifyKeyMiddleware(config.PUBLIC_KEY), async function (req, res) {
     // Interaction id, type and data
     const { id, type, data } = req.body;
 
@@ -137,7 +263,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
 });
 
 app.listen(PORT, () => {
-    discordClient.login(process.env.DISCORD_TOKEN);
+    discordClient.login(config.DISCORD_TOKEN);
     startPeriodicJobs();
     console.log('Listening on port', PORT);
 });

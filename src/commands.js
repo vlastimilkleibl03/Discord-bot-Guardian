@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { config } from './config.js'
 import { ChannelTypes } from 'discord-interactions';
 import { InstallGlobalCommands } from './utils.js';
 
@@ -211,4 +211,4 @@ const ALL_COMMANDS = [
     USER_RECORD,
 ];
 
-InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
+InstallGlobalCommands(config.APP_ID, ALL_COMMANDS);
