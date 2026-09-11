@@ -11,9 +11,11 @@ import {
 } from 'discord-interactions';
 
 import { config } from './config.js'
-import { getOption, AuthenticateDiscordUser } from './utils.js';
+import { getOption } from './utils.js';
 import { discordClient } from './gateway/init.js';
 import { startPeriodicJobs } from './periodic_jobs/init.js'
+
+import { authenticateDiscordUser } from './utils_web/authentication.js';
 
 import { testReply } from './informative_replies/test.js';
 import { displayTicketModal, processTicketModal } from './ticket_system/open_ticket.js';
@@ -90,7 +92,7 @@ app.get('/auth/discord', (req, res) => {
         client_id: config.APP_ID,
         redirect_uri: config.REDIRECT_URI,
         response_type: 'code',
-        scope: 'identify',
+        scope: 'identify guilds',
         state
     });
 
@@ -114,7 +116,7 @@ app.get('/auth/discord/callback', async (req, res) => {
 
     try {
         // Get user details from discord
-        const user = await AuthenticateDiscordUser(code);
+        const user = await authenticateDiscordUser(code);
 
         // Setup a new session after login and save user data
         req.session.regenerate((err) => {
@@ -127,6 +129,7 @@ app.get('/auth/discord/callback', async (req, res) => {
                 id: user.id,
                 username: user.global_name ?? user.username,
                 avatar: user.avatar,
+                guilds: user.guilds
             };
 
             res.redirect('/dashboard.html');

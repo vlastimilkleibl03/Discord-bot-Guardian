@@ -8,22 +8,25 @@
     <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body>
-
-    <h1>Dashboard</h1>
-
     <div id="loading">
         Loading...
     </div>
 
     <div id="dashboard" hidden>
-        <p>Hi <span id="username"></span>!</p>
-
-        <a href="/logout">Log out</a>
+        <div id="navbar">
+            <h1>Dashboard</h1>
+            <select id="guild_select"></select>
+            <div id="nav_right">
+                <h1><span id="username"></span></h1>
+                <a id="logout_button" href="/logout">Log out</a>
+            </div>
+        </div>
     </div>
 
     <div id="error" hidden>
-        Unlogged user, please log in to display your account.
-        <a href="/auth/discord">Log in</a>
+        <h1>Error</h1>
+        <p id="error_description">Unlogged user, please log in to display your account.</p>
+        <a id="login_button" href="/auth/discord">Log in</a>
     </div>
 
     <script src="/js/dashboard.js"></script>

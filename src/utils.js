@@ -25,48 +25,6 @@ export async function DiscordRequest(endpoint, options) {
   return res;
 }
 
-/**
- * Fetches user account details from discord using authorization code.
- * @param {string} code Authorization code provided in discord auth callback.
- * @returns Object with user details.
- */
-export async function AuthenticateDiscordUser(code) {
-    const tokenResponse = await fetch(
-        'https://discord.com/api/oauth2/token',
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                client_id: config.APP_ID,
-                client_secret: config.CLIENT_SECRET,
-                grant_type: 'authorization_code',
-                code,
-                redirect_uri: config.REDIRECT_URI,
-            }),
-        }
-    );
-    if (!tokenResponse.ok) {
-        console.error(await tokenResponse.text());
-        throw new Error('Unable to get Discord token.')
-    }
-    const tokens = await tokenResponse.json();
-
-    const userResponse = await fetch(
-        'https://discord.com/api/users/@me',
-        {
-            headers: {
-                Authorization: `Bearer ${tokens.access_token}`,
-            },
-        }
-    );
-    if (!userResponse.ok) {
-        throw new Error('Unable to load user detaSils.');
-    }
-
-    return await userResponse.json();
-}
 
 export async function InstallGlobalCommands(appId, commands) {
   // API endpoint to overwrite global commands
@@ -82,7 +40,26 @@ export async function InstallGlobalCommands(appId, commands) {
 
 
 /**
- * Fetches and return a message that was sent in given channel.
+ * Fetches and returns all discord servers where bot is joined.
+ * @returns Array of guilds objects.
+ */
+export async function fetchBotGuilds() {
+    const endpoint = '/users/@me/guilds';
+
+    try {
+        const response = await DiscordRequest(endpoint, { method: 'GET' });
+        const guilds = await response.json()
+        return guilds;
+    }
+    catch (err) {
+        console.error(err);
+        throw new Error('Failed to fetch guilds where bot is joined.');
+    }
+}
+
+
+/**
+ * Fetches and returns a message that was sent in given channel.
  * @param {any} messageId Id of message.
  * @param {any} channelId Id of channel, where message is posted.
  * @returns Body of fetched message.

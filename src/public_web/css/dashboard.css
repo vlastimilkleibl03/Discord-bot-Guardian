@@ -1,0 +1,92 @@
+body {
+    background-color: dimgray;
+}
+
+#loading {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+    color: lightgrey;
+}
+
+#error {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: lightgrey;
+    font-size: 3rem;
+}
+
+#error_description {
+    font-size: 2rem;
+}
+
+#login_button {
+    border: 5px solid black;
+    background-color: limegreen;
+    color: black;
+    font-size: 2rem;
+    align-self: center;
+    padding: 0.5em;
+    text-decoration: none;
+}
+
+#login_button:hover {
+    background-color: lightgray;
+    transition: 0.3s
+}
+
+#navbar {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    padding: 1rem 2rem;
+    gap: 2rem;
+    color: lightgray;
+}
+
+#navbar h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+#guild_select {
+    box-sizing: border-box;
+    height: 3rem;
+    min-width: 15rem;
+    padding: 0 0.75rem;
+    border: 3px solid black;
+    background-color: lightgray;
+    color: black;
+    font-size: 1.2rem;
+}
+
+#nav_right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#logout_button {
+    box-sizing: border-box;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    border: 3px solid black;
+    background-color: darkred;
+    color: lightgray;
+    font-size: 1.2rem;
+    text-decoration: none;
+}
+
+#logout_button:hover {
+    background-color: lightgray;
+    color: black;
+    transition: 0.3s;
+}
